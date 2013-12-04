@@ -9,7 +9,7 @@ var initialized = false,
 
 function initializeModule(mod) {
     if (typeof mod === 'function') {
-        mod(hk, hk.constants, hk.theme);
+        // mod(hk, hk.constants, hk.theme);
     }
 }
 
@@ -104,7 +104,7 @@ hk.defineConstant   = defineConstant;
 hk.defineConstants  = defineConstants;
 hk.styles           = styles;
 hk.theme            = styles.vars;
-hk.action           = require('./lib/action');
+hk.action           = require('hudkit-action');
 
 register(require('./lib/Widget'));
 register(require('./lib/RootPane'));
