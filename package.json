@@ -13,5 +13,12 @@
     "toolkit"
   ],
   "author": "Jason Frame <jason@onehackoranother.com> (http://jasonframe.co.uk)",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "classkit": "~0.1.0",
+    "domutil": "0.0.10",
+    "stylekit": "~0.1.2",
+    "trbl": "0.0.2",
+    "hudkit-action": "~0.1.0"
+  }
 }
