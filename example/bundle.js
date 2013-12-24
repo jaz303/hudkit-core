@@ -25,7 +25,9 @@ function installDefaultTheme() {
 
     var theme = hk.theme;
 
-    theme.set('HK_ROOT_BG_COLOR', '#202020');
+    theme.set('HK_ROOT_BG_COLOR',           '#202020');
+    theme.set('HK_TOOLBAR_HEIGHT',          '16px');
+    theme.set('HK_TOOLBAR_MARGIN_BOTTOM',   '8px');
 
 }
 
@@ -268,9 +270,9 @@ module.exports = function(hk, k, theme) {
                         this._toolbar.setBounds(left,
                                                 top,
                                                 width,
-                                                theme.TOOLBAR_HEIGHT);
+                                                theme.getInt('HK_TOOLBAR_HEIGHT'));
                         
-                        var delta = theme.TOOLBAR_HEIGHT + theme.TOOLBAR_MARGIN_BOTTOM;
+                        var delta = theme.getInt('HK_TOOLBAR_HEIGHT') + theme.getInt('HK_TOOLBAR_MARGIN_BOTTOM');
                         rootTop += delta;
                         rootHeight -= delta;
                     
@@ -913,9 +915,15 @@ StyleBlock.prototype._watchReferencedVariables = function() {
 
 StyleBlock.prototype._cssWithVariableExpansion = function() {
     var vars = this._styleSet.vars;
-    return this._css.replace(VAR_RE, function(m) {
-        return vars.get(m.substr(1));
-    });
+
+    var css = this._css;
+    while (css.match(VAR_RE)) {
+        css = css.replace(VAR_RE, function(m) {
+            return vars.get(m.substr(1));
+        });
+    }
+
+    return css;
 }
 
 StyleBlock.prototype._checkMutable = function() {
@@ -1034,9 +1042,15 @@ module.exports = function(options) {
     }
 
     function translateKey(k) {
-        return k.replace(/[A-Z]/g, function(m) {
+        k = k.replace(/[A-Z]/g, function(m) {
             return '-' + m[0].toLowerCase();
         });
+
+        if (k.match(/^(webkit|moz|ms|o|khtml)-/)) {
+            k = '-' + k;
+        }
+
+        return k;
     }
 
     function throwFrozen() {

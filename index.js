@@ -17,7 +17,9 @@ function installDefaultTheme() {
 
     var theme = hk.theme;
 
-    theme.set('HK_ROOT_BG_COLOR', '#202020');
+    theme.set('HK_ROOT_BG_COLOR',           '#202020');
+    theme.set('HK_TOOLBAR_HEIGHT',          '16px');
+    theme.set('HK_TOOLBAR_MARGIN_BOTTOM',   '8px');
 
 }
 
