@@ -1,4 +1,4 @@
-;(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 window.init = function() {
     var hk = require('../');
     hk.init(document);
@@ -33,27 +33,39 @@ function installDefaultTheme() {
 
 function installDefaultStyles() {
 
+    //
+    // Global macros
+
+    var ms = styles.macros;
+
+    ms.noSelect = function() {
+        this.attrib('webkitUserSelect', 'none');
+        this.attrib('cursor', 'default');
+    };
+
+    //
+    // Default styles
+
     var sb = styles.block();
 
-    sb.rule('.hk', {
-
-        // TODO: need macros
-        webkitUserSelect: 'none',
-        cursor: 'default',
-
-        background: '#101010',
-        font: '12px Arial, Helvetica, sans-serif',
-
-        a: {
-            textDecoration: 'none'
-        },
+    sb.rule('.hk', function(b) {
         
-        '*': {
-            // TODO: need macros
-            webkitUserSelect: 'none',
-            cursor: 'default'
-        }
-    
+        b.noSelect();
+
+        b.attribs({
+            background: '#101010',
+            font: '12px Arial, Helvetica, sans-serif',
+        });
+
+        b.rule({
+            a: {
+                textDecoration: 'none'
+            },
+            '*': function() {
+                b.noSelect();
+            }
+        });
+
     });
 
     sb.commit();
@@ -827,7 +839,8 @@ function StyleSet(doc) {
     
     this._document = doc || global.document || document;
     this._blocks = [];
-    
+
+    this.macros = {};
     this.vars = wmap();
     
     this.vars.getInt = function(key) {
@@ -862,6 +875,8 @@ function StyleBlock(set) {
     this._builder = null;
 
     this._css = '';
+
+    this.macros = Object.create(set.macros);
 }
 
 StyleBlock.prototype.appendCSS = function(css) {
@@ -896,7 +911,8 @@ StyleBlock.prototype.destroy = function() {
 StyleBlock.prototype.rule = function(selector, rs) {
     if (this._builder === null) {
         this._builder = builder({
-            append: this.appendCSS.bind(this)
+            append      : this.appendCSS.bind(this),
+            builder     : this.macros
         });
     }
     return this._builder.rule(selector, rs);
@@ -978,7 +994,7 @@ module.exports = function(options) {
     function attribs(as) {
         frozen && throwFrozen();
         for (var k in as) {
-            attrib(k, as[k]);
+            b.attrib(k, as[k]);
         }
         return this;
     }
@@ -988,7 +1004,7 @@ module.exports = function(options) {
         frozen && throwFrozen();
 
         if (Array.isArray(rs)) {
-            rs.forEach(function(r) { rule(selector, r); }, b);
+            rs.forEach(function(r) { b.rule(selector, r); });
             return;
         }
 
@@ -999,14 +1015,14 @@ module.exports = function(options) {
         if (typeof rs === 'string') {
             append(currSelector, rs);
         } else if (typeof rs === 'function') {
-            rs(b);
+            rs.call(b, b);
         } else if (typeof rs === 'object') {
             for (var cssKey in rs) {
                 var cssValue = rs[cssKey];
                 if (typeof cssValue === 'object') {
-                    rule(cssKey, cssValue);
+                    b.rule(cssKey, cssValue);
                 } else {
-                    attrib(cssKey, cssValue);
+                    b.attrib(cssKey, cssValue);
                 }
             }
         } else {
@@ -1018,6 +1034,12 @@ module.exports = function(options) {
 
         return this;
 
+    }
+
+    function rules(rs) {
+        for (var k in rs) {
+            b.rule(k, rs[k]);
+        }
     }
 
     function append(sel, css) {
@@ -1060,6 +1082,7 @@ module.exports = function(options) {
     b.attrib        = attrib;
     b.attribs       = attribs;
     b.rule          = rule;
+    b.rules         = rules;
     b.commit        = commit;
     b.toString      = function() { commit(); return buffer; }
 
@@ -1273,4 +1296,3 @@ process.chdir = function (dir) {
 };
 
 },{}]},{},[1])
-;

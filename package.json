@@ -17,7 +17,7 @@
   "dependencies": {
     "classkit": "~0.1.0",
     "domutil": "0.0.10",
-    "stylekit": "~0.1.7",
+    "stylekit": "~0.2.2",
     "trbl": "0.0.2",
     "hudkit-action": "~0.1.0"
   }

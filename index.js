@@ -25,27 +25,39 @@ function installDefaultTheme() {
 
 function installDefaultStyles() {
 
+    //
+    // Global macros
+
+    var ms = styles.macros;
+
+    ms.noSelect = function() {
+        this.attrib('webkitUserSelect', 'none');
+        this.attrib('cursor', 'default');
+    };
+
+    //
+    // Default styles
+
     var sb = styles.block();
 
-    sb.rule('.hk', {
-
-        // TODO: need macros
-        webkitUserSelect: 'none',
-        cursor: 'default',
-
-        background: '#101010',
-        font: '12px Arial, Helvetica, sans-serif',
-
-        a: {
-            textDecoration: 'none'
-        },
+    sb.rule('.hk', function(b) {
         
-        '*': {
-            // TODO: need macros
-            webkitUserSelect: 'none',
-            cursor: 'default'
-        }
-    
+        b.noSelect();
+
+        b.attribs({
+            background: '#101010',
+            font: '12px Arial, Helvetica, sans-serif',
+        });
+
+        b.rule({
+            a: {
+                textDecoration: 'none'
+            },
+            '*': function() {
+                b.noSelect();
+            }
+        });
+
     });
 
     sb.commit();
