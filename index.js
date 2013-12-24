@@ -9,13 +9,15 @@ var initialized = false,
 
 function initializeModule(mod) {
     if (typeof mod === 'function') {
-        // mod(hk, hk.constants, hk.theme);
+        mod(hk, hk.constants, hk.theme);
     }
 }
 
 function installDefaultTheme() {
 
-    // TODO: install default theme
+    var theme = hk.theme;
+
+    theme.set('HK_ROOT_BG_COLOR', '#202020');
 
 }
 
@@ -31,9 +33,9 @@ function installDefaultStyles() {
 
         background: '#101010',
         font: '12px Arial, Helvetica, sans-serif',
-        
+
         a: {
-            textDecoration: 'none';
+            textDecoration: 'none'
         },
         
         '*': {
@@ -57,13 +59,17 @@ function init(doc) {
 
     styles = stylekit(doc);
 
+    hk.styles = styles;
+    hk.theme = styles.vars;
+
     installDefaultTheme();
     installDefaultStyles();
 
     modules.forEach(initializeModule);
 
-    // TODO: create root pane
-    
+    hk.rootPane = new hk.RootPane();
+    doc.body.appendChild(hk.rootPane.getRoot());
+
     initialized = true;
 
 }
@@ -102,8 +108,6 @@ hk.register         = register;
 hk.constants        = constants;
 hk.defineConstant   = defineConstant;
 hk.defineConstants  = defineConstants;
-hk.styles           = styles;
-hk.theme            = styles.vars;
 hk.action           = require('hudkit-action');
 
 register(require('./lib/Widget'));
