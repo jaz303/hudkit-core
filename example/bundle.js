@@ -158,7 +158,7 @@ function installDefaultStyles() {
 function init(doc) {
 
     if (initialized)
-        return;
+        return hk.rootPane;
 
     doc = doc || global.document;
 
@@ -173,10 +173,13 @@ function init(doc) {
     modules.forEach(initializeModule);
 
     hk.rootPane = new hk.RootPane();
+    hk.rootEl = doc.body;
     doc.body.className = 'hk';
     doc.body.appendChild(hk.rootPane.getRoot());
 
     initialized = true;
+
+    return hk.rootPane;
 
 }
 
