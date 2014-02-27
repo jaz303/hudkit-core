@@ -40,11 +40,6 @@ function init() {
     initialized = true;
 }
 
-Context.defineConstants({
-    POSITION_MODE_MANUAL        : 'manual',
-    POSITION_MODE_AUTO          : 'auto'
-});
-
 hk.register(require('./lib/Widget'));
 hk.register(require('./lib/RootPane'));
 
@@ -104,11 +99,11 @@ function Instance(window) {
     	mod.attach(this);
     }, this);
 
-    this.rootPane = this.rootPane();
+    this.root = this.rootPane();
 
-    this.rootEl = this.document.body;
-    this.rootEl.className = 'hk';
-    this.rootEl.appendChild(this.rootPane.getRoot());
+    var body = this.document.body;
+    body.className = 'hk';
+    body.appendChild(this.root.getRoot());
 
 }
 
@@ -154,7 +149,7 @@ var DEFAULT_PADDING = 8;
 
 exports.initialize = function(ctx, k, theme) {
 
-    var RootPane = ctx.Widget.extend(function(_sc, _sm) {
+    ctx.registerWidget('RootPane', ctx.Widget.extend(function(_sc, _sm) {
 
         return [
 
@@ -316,9 +311,7 @@ exports.initialize = function(ctx, k, theme) {
 
         ];
 
-    });
-
-    ctx.registerWidget('RootPane', RootPane);
+    }));
 
 }
 
@@ -333,7 +326,12 @@ var fs 		= require('fs'),
 
 exports.initialize = function(ctx, k, theme) {
 
-    var Widget = Class.extend(function(_sc, _sm) {
+    ctx.defineConstants({
+        POSITION_MODE_MANUAL    : 'manual',
+        POSITION_MODE_AUTO      : 'auto'
+    });
+
+    ctx.registerWidget('Widget', Class.extend(function(_sc, _sm) {
 
         return [
 
@@ -540,9 +538,7 @@ exports.initialize = function(ctx, k, theme) {
         
         ];
 
-    });
-
-	ctx.registerWidget('Widget', Widget);
+    }));
 
 }
 
@@ -647,7 +643,7 @@ module.exports = {
         return theme[k];
     },
     getInt: function(k) {
-        return parseInt(k, 10);
+        return parseInt(theme[k], 10);
     }
 };
 
