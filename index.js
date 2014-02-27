@@ -1,6 +1,7 @@
 var fs          = require('fs'),
     signals     = require('./lib/signals'),
     constants   = require('./lib/constants'),
+    theme       = require('./lib/theme'),
     Instance    = require('./lib/Instance'),
     Context     = require('./lib/Context'),
     registry    = require('./lib/registry');
@@ -20,7 +21,7 @@ signals.moduleRegistered.connect(function(mod) {
 });
 
 function initializeModule(mod) {
-    mod.initialize(Context, constants);
+    mod.initialize(Context, constants, theme);
 }
 
 function init() {

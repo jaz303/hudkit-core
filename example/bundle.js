@@ -2,13 +2,14 @@
 window.init = function() {
     var hudkit = require('../');
 	hudkit.init();
-	window.hk = hudkit.instance(document);
+	window.hk = hudkit.instance(window);
 };
 
 },{"../":2}],2:[function(require,module,exports){
 var fs          = require('fs'),
     signals     = require('./lib/signals'),
     constants   = require('./lib/constants'),
+    theme       = require('./lib/theme'),
     Instance    = require('./lib/Instance'),
     Context     = require('./lib/Context'),
     registry    = require('./lib/registry');
@@ -28,7 +29,7 @@ signals.moduleRegistered.connect(function(mod) {
 });
 
 function initializeModule(mod) {
-    mod.initialize(Context, constants);
+    mod.initialize(Context, constants, theme);
 }
 
 function init() {
@@ -47,7 +48,7 @@ Context.defineConstants({
 hk.register(require('./lib/Widget'));
 hk.register(require('./lib/RootPane'));
 
-},{"./lib/Context":3,"./lib/Instance":4,"./lib/RootPane":5,"./lib/Widget":6,"./lib/constants":7,"./lib/registry":8,"./lib/signals":9,"fs":18}],3:[function(require,module,exports){
+},{"./lib/Context":3,"./lib/Instance":4,"./lib/RootPane":5,"./lib/Widget":6,"./lib/constants":7,"./lib/registry":8,"./lib/signals":9,"./lib/theme":10,"fs":18}],3:[function(require,module,exports){
 var registry 	= require('./registry'),
 	signals		= require('./signals'),
 	constants 	= require('./constants');
@@ -85,22 +86,25 @@ var fs 			= require('fs'),
 	registry 	= require('./registry'),
 	signals 	= require('./signals'),
 	theme 		= require('./theme'),
-	constants	= require('./constants');
+	constants	= require('./constants'),
+    slice       = Array.prototype.slice;
 
 module.exports = Instance;
 
 var BASE_CSS = ".hk-root {\n\t-webkit-user-select: none;\n\tcursor: default;\n\tbackground: #101010;\n\tfont: 12px $HK_CONTROL_FONT;\n}\n\n.hk-root a {\n\ttext-decoration: none;\n}\n\n.hk-root * {\n\t-webkit-user-select: none;\n\tcursor: default;\n}";
 
-function Instance(doc) {
+function Instance(window) {
 
-    this.document = doc;
+    this.window = window;
+    this.document = window.document;
+    
     this.appendCSS(BASE_CSS);
 
     registry.modules().forEach(function(mod) {
     	mod.attach(this);
     }, this);
 
-    this.rootPane = new this.RootPane();
+    this.rootPane = this.rootPane();
 
     this.rootEl = this.document.body;
     this.rootEl.className = 'hk';
@@ -114,16 +118,33 @@ Instance.prototype.action = action;
 Instance.prototype.appendCSS = function(css) {
 
     css = css.replace(/\$(\w+)/g, function(m) {
-        return theme[RegExp.$1];
+        return theme.get(RegExp.$1);
     });
 
-    return styleTag(this.doc, css);
+    return styleTag(this.document, css);
 
 }
 
 // when widget is registered make it available to all hudkit instances
 signals.widgetRegistered.connect(function(name, ctor) {
-	Instance.prototype[name] = ctor;
+
+    var method = name[0].toLowerCase() + name.substring(1);
+
+    Instance.prototype[method] = function(a, b, c, d, e, f, g, h) {
+        switch (arguments.length) {
+            case 0: return new ctor(this);
+            case 1: return new ctor(this, a);
+            case 2: return new ctor(this, a, b);
+            case 3: return new ctor(this, a, b, c);
+            case 4: return new ctor(this, a, b, c, d);
+            case 5: return new ctor(this, a, b, c, d, e);
+            case 6: return new ctor(this, a, b, c, d, e, f);
+            case 7: return new ctor(this, a, b, c, d, e, f, g);
+            case 8: return new ctor(this, a, b, c, d, e, f, g, h);
+            default: throw new Error("too many ctor arguments. sorry :(");
+        }
+    }
+
 });
 },{"./constants":7,"./registry":8,"./signals":9,"./theme":10,"fs":18,"hudkit-action":13,"style-tag":16}],5:[function(require,module,exports){
 var fs      = require('fs'),
@@ -131,7 +152,7 @@ var fs      = require('fs'),
 
 var DEFAULT_PADDING = 8;
 
-exports.initialize = function(ctx, k) {
+exports.initialize = function(ctx, k, theme) {
 
     var RootPane = ctx.Widget.extend(function(_sc, _sm) {
 
@@ -234,7 +255,7 @@ exports.initialize = function(ctx, k) {
                 },
 
                 _buildStructure: function() {
-                    this._root = document.createElement('div');
+                    this._root = this.document.createElement('div');
                     this._root.className = 'hk-root-pane';
                 },
 
@@ -271,15 +292,21 @@ exports.initialize = function(ctx, k) {
 
                 _setupResizeHandler: function() {
 
-                    var self = this,
+                    var self    = this,
                         timeout = null;
 
-                    window.addEventListener('resize', function() {
+                    // FIXME: stash this registration for later unbinding
+                    // isn't this what basecamp is for?
+                    this.window.addEventListener('resize', function() {
                         if (self._resizeDelay <= 0) {
                             self._layout();    
                         } else {
-                            if (timeout) clearTimeout(timeout);
-                            timeout = setTimeout(function() { self._layout(); }, self._resizeDelay);
+                            if (timeout) {
+                                self._clearTimeout(timeout);
+                            }
+                            timeout = self._setTimeout(function() {
+                                self._layout();
+                            }, self._resizeDelay);
                         }
                     });
 
@@ -304,14 +331,16 @@ var fs 		= require('fs'),
 	Class   = require('classkit').Class,
 	du 		= require('domutil');
 
-exports.initialize = function(ctx, k) {
+exports.initialize = function(ctx, k, theme) {
 
     var Widget = Class.extend(function(_sc, _sm) {
 
         return [
 
-            function(rect) {
+            function(hk, rect) {
 
+                this._hk = hk;
+                
                 this._parent = null;
                 this._hidden = false;
                 this._positionMode = k.POSITION_MODE_MANUAL;
@@ -328,6 +357,15 @@ exports.initialize = function(ctx, k) {
                     this.setBounds(0, 0, size.width, size.height);
                 }
 
+            },
+
+            'properties', {
+                window: {
+                    get: function() { return this._hk.window; }
+                },
+                document: {
+                    get: function() { return this._hk.document; }
+                }
             },
 
             'methods', {
@@ -477,6 +515,25 @@ exports.initialize = function(ctx, k) {
                     ele.removeChild(childWidget.getRoot());
                     childWidget.setParent(null);
 
+                },
+
+                //
+                // Timeout/intervals
+
+                _setTimeout: function(fn, timeout) {
+                    return this._hk.window.setTimeout(fn, timeout);
+                },
+
+                _clearTimeout: function(id) {
+                    return this._hk.window.clearTimeout(id);
+                },
+
+                _setInterval: function(fn, interval) {
+                    return this._hk.window.setInterval(fn, interval);
+                },
+
+                _clearInterval: function(id) {
+                    return this._hk.window.clearInterval(id);
                 }
             
             }
@@ -543,7 +600,8 @@ s('widgetRegistered');
 },{"signalkit":15}],10:[function(require,module,exports){
 // TODO: this is eventually to be handled by Unwise,
 // with live updating when themes change.
-module.exports = {
+
+var theme = {
     'HK_MONOSPACE_FONT'             : 'Menlo, Monaco, "Liberation Mono", monospace',
     'HK_TEXT_COLOR'                 : '#121729',
 
@@ -583,6 +641,16 @@ module.exports = {
     'HK_DIALOG_HEADER_HEIGHT'       : '24px',
     'HK_DIALOG_TRANSITION_DURATION' : '200'
 };
+
+module.exports = {
+    get: function(k) {
+        return theme[k];
+    },
+    getInt: function(k) {
+        return parseInt(k, 10);
+    }
+};
+
 },{}],11:[function(require,module,exports){
 function Class() {};
   
@@ -619,6 +687,9 @@ Class.Features = {
     for (var methodName in methods) {
       ctor.prototype[methodName] = methods[methodName];
     }
+  },
+  properties: function(ctor, properties) {
+    Object.defineProperties(ctor.prototype, properties);
   }
 };
 

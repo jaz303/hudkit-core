@@ -15,9 +15,8 @@
   "author": "Jason Frame <jason@onehackoranother.com> (http://jasonframe.co.uk)",
   "license": "MIT",
   "dependencies": {
-    "classkit": "~0.1.0",
+    "classkit": "~0.2.0",
     "domutil": "0.0.10",
-    "stylekit": "~0.2.3",
     "trbl": "0.0.2",
     "hudkit-action": "~0.1.0",
     "brfs": "~1.0.0",

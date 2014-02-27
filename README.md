@@ -18,9 +18,9 @@ Register a module with `hudkit` is initialised. Hudkit modules are objects with 
 
 Initialise hudkit. Calls each registered module's `initialize()` function.
 
-#### `hudkit.instance(document)`
+#### `hudkit.instance(window)`
 
-Create an instance of hudkit rooted on the given `document`. Returns an `Instance` object granting access to widget constructors, constants etc.
+Create an instance of hudkit rooted on the given `window`. Returns an `Instance` object granting access to widget constructors, constants etc.
 
 ### `Instance`
 
