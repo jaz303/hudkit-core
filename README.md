@@ -12,7 +12,7 @@ Register a module with `hudkit` is initialised. Hudkit modules are objects with 
 
   * `initialize(ctx)`: perform one-time module initialisation; this probably means registering a custom widget constructor by calling `ctx.registerWidget(name, ctor)`. Check out `lib/Widget/index.js` and `lib/RootPane/index.js` for reference.
 
-  * `attach(instance)`: attach
+  * `attach(instance)`: set this module up to work with the given hudkit instance; the most common operation performed here is to install any stylesheets by calling `instance.appendCSS()`.
 
 #### `hudkit.init()`
 
@@ -24,7 +24,7 @@ Create an instance of hudkit rooted on the given `document`. Returns an `Instanc
 
 ### `Instance`
 
-In addition to the following every `Instance` will contain a property for each registered widget constructor e.g. `instance.Widget`, `instance.RootPane`.
+In addition to the following properties, every `Instance` also contains a proxy method to each registered widget constructor e.g. `instance.Widget()`, `instance.RootPane()`.
 
 #### `i.action(callback, [opts])`
 
