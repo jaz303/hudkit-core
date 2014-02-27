@@ -19,6 +19,9 @@
     "domutil": "0.0.10",
     "stylekit": "~0.2.3",
     "trbl": "0.0.2",
-    "hudkit-action": "~0.1.0"
+    "hudkit-action": "~0.1.0",
+    "brfs": "~1.0.0",
+    "style-tag": "0.0.1",
+    "signalkit": "~0.2.3"
   }
 }

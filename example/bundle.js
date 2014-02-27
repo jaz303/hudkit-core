@@ -1,255 +1,139 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 window.init = function() {
-    var hk = require('../');
-    hk.init(document);
-    window.hk = hk;
+    var hudkit = require('../');
+	hudkit.init();
+	window.hk = hudkit.instance(document);
 };
 
 },{"../":2}],2:[function(require,module,exports){
-var global=typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {};var stylekit = require('stylekit');
+var fs          = require('fs'),
+    signals     = require('./lib/signals'),
+    constants   = require('./lib/constants'),
+    Instance    = require('./lib/Instance'),
+    Context     = require('./lib/Context'),
+    registry    = require('./lib/registry');
 
-var hk = {};
+var hk = module.exports = {
+    register    : registry.registerModule,
+    init        : init,
+    instance    : function(doc) { return new Instance(doc); }
+};
 
-var initialized = false,
-    styles      = null,
-    modules     = [],
-    constants   = {};
+var initialized = false;
+
+signals.moduleRegistered.connect(function(mod) {
+    if (initialized) {
+        initializeModule(mod);
+    }
+});
 
 function initializeModule(mod) {
-    if (typeof mod === 'function') {
-        mod(hk, hk.constants, hk.theme);
-    }
+    mod.initialize(Context, constants);
 }
 
-function installDefaultTheme() {
-
-    var controlFontSize = 10,
-        tabPadding      = 7;
-
-    // TODO: stylekit should support assigned of functions as values
-    // and give those functions the ability to watch depend on variables.
-    // This would make it possible to have the entire stylesheet update correctly
-    // when live. (we can't use calc() here because the calculated variables also
-    // need to be accessible from Javascript)
-    // Maybe this should be a change in wmap...
-    var theme = {
-        'HK_MONOSPACE_FONT'             : 'Menlo, Monaco, "Liberation Mono", monospace',
-        'HK_TEXT_COLOR'                 : '#121729',
-
-        'HK_CONTROL_FONT'               : 'Helvetica, sans-serif',
-        'HK_CONTROL_FONT_SIZE'          : controlFontSize + 'px',
-        'HK_CONTROL_BORDER_COLOR'       : '#455366',
-        'HK_CONTROL_ACTIVE_BG_COLOR'    : '#EAF20F',
-        
-        'HK_BUTTON_BG_COLOR'            : '#929DA8',
-
-        'HK_ROOT_BG_COLOR'              : '#181E23',
-
-        'HK_CONSOLE_FONT_SIZE'          : '13px',
-
-        'HK_SPLIT_PANE_DIVIDER_SIZE'    : '8px',
-        
-        'HK_TAB_SPACING'                : '7px',
-        'HK_TAB_PADDING'                : tabPadding + 'px',
-        'HK_TAB_HEIGHT'                 : (controlFontSize + (2 * tabPadding)) + 'px',
-        'HK_TAB_BORDER_RADIUS'          : '5px',
-        'HK_TAB_BACKGROUND_COLOR'       : '#67748C',
-
-        'HK_BLOCK_BORDER_RADIUS'        : '10px',
-
-        'HK_TOOLBAR_HEIGHT'             : '18px',
-        'HK_TOOLBAR_ITEM_BORDER_COLOR'  : '#A6B5BB',
-        'HK_TOOLBAR_MARGIN_TOP'         : '8px',
-        'HK_TOOLBAR_MARGIN_RIGHT'       : '8px',
-        'HK_TOOLBAR_MARGIN_BOTTOM'      : '8px',
-        'HK_TOOLBAR_MARGIN_LEFT'        : '8px',
-
-        // Unused currently...
-        'HK_DIALOG_PADDING'             : '6px',
-        'HK_DIALOG_BORDER_RADIUS'       : '$HK_DIALOG_PADDING',
-        'HK_DIALOG_HEADER_HEIGHT'       : '24px',
-        'HK_DIALOG_TRANSITION_DURATION' : '200'
-    };
-
-    for (var k in theme) {
-        hk.theme.set(k, theme[k]);
+function init() {
+    if (initialized) {
+        return;
     }
-
-}
-
-function installDefaultStyles() {
-
-    //
-    // Global macros
-
-    var ms = styles.macros;
-
-    ms.noSelect = function() {
-        this.attribs({
-            webkitUserSelect    : 'none',
-            cursor              : 'default'
-        });
-    };
-
-    ms.controlFont = function() {
-        this.attribs({
-            font: '$HK_CONTROL_FONT_SIZE $HK_CONTROL_FONT',
-            lineHeight: 1
-        });
-    };
-
-    ms.controlBorder = function() {
-        this.attribs({
-            border: '1px solid $HK_CONTROL_BORDER_COLOR'
-        });
-    }
-
-    ms.button = function() {
-        this.controlFont();
-
-        this.attribs({
-            background: '$HK_BUTTON_BG_COLOR',
-            color: '$HK_TEXT_COLOR'
-        });
-
-        this.rule('&.disabled', {
-            color: '#d0d0d0'
-        });
-
-        this.rule('&:not(.disabled):active', {
-            background: '$HK_CONTROL_ACTIVE_BG_COLOR'
-        });
-    };
-
-    ms.borderedButton = function() {
-        this.button();
-        this.controlBorder();
-    };
-
-    //
-    // Default styles
-
-    var sb = styles.block();
-
-    sb.rule('.hk', function(b) {
-        
-        b.noSelect();
-
-        b.attribs({
-            background: '#101010',
-            font: '12px Arial, Helvetica, sans-serif',
-        });
-
-        b.rules({
-            a: {
-                textDecoration: 'none'
-            },
-            '*': function() {
-                b.noSelect();
-            }
-        });
-
-    });
-
-    sb.commit();
-
-}
-
-function init(doc) {
-
-    if (initialized)
-        return hk.rootPane;
-
-    doc = doc || global.document;
-
-    styles = stylekit(doc);
-
-    hk.styles = styles;
-    hk.theme = styles.vars;
-
-    installDefaultTheme();
-    installDefaultStyles();
-
-    modules.forEach(initializeModule);
-
-    hk.rootPane = new hk.RootPane();
-    hk.rootEl = doc.body;
-    doc.body.className = 'hk';
-    doc.body.appendChild(hk.rootPane.getRoot());
-
+    registry.modules().forEach(initializeModule);
     initialized = true;
+}
 
-    return hk.rootPane;
+Context.defineConstants({
+    POSITION_MODE_MANUAL        : 'manual',
+    POSITION_MODE_AUTO          : 'auto'
+});
+
+hk.register(require('./lib/Widget'));
+hk.register(require('./lib/RootPane'));
+
+},{"./lib/Context":3,"./lib/Instance":4,"./lib/RootPane":5,"./lib/Widget":6,"./lib/constants":7,"./lib/registry":8,"./lib/signals":9,"fs":18}],3:[function(require,module,exports){
+var registry 	= require('./registry'),
+	signals		= require('./signals'),
+	constants 	= require('./constants');
+
+// Context object is passed to each registered module's initialize()
+// function, allowing them to access select registry methods and 
+// all previously registered widgets.
+var Context = module.exports = {
+	
+	registerWidget  : registry.registerWidget,
+	
+	defineConstant: function(name, value) {
+		Object.defineProperty(constants, name, {
+			enumerable	: true,
+			writable	: false,
+			value		: value
+		});
+	},
+
+	defineConstants: function(constants) {
+		for (var k in constants) {
+			this.defineConstant(k, constants[k]);
+		}
+	}
+
+};
+
+signals.widgetRegistered.connect(function(name, ctor) {
+	Context[name] = ctor;
+});
+},{"./constants":7,"./registry":8,"./signals":9}],4:[function(require,module,exports){
+var fs 			= require('fs'),
+	styleTag 	= require('style-tag'),
+    action      = require('hudkit-action'),
+	registry 	= require('./registry'),
+	signals 	= require('./signals'),
+	theme 		= require('./theme'),
+	constants	= require('./constants');
+
+module.exports = Instance;
+
+var BASE_CSS = ".hk-root {\n\t-webkit-user-select: none;\n\tcursor: default;\n\tbackground: #101010;\n\tfont: 12px $HK_CONTROL_FONT;\n}\n\n.hk-root a {\n\ttext-decoration: none;\n}\n\n.hk-root * {\n\t-webkit-user-select: none;\n\tcursor: default;\n}";
+
+function Instance(doc) {
+
+    this.document = doc;
+    this.appendCSS(BASE_CSS);
+
+    registry.modules().forEach(function(mod) {
+    	mod.attach(this);
+    }, this);
+
+    this.rootPane = new this.RootPane();
+
+    this.rootEl = this.document.body;
+    this.rootEl.className = 'hk';
+    this.rootEl.appendChild(this.rootPane.getRoot());
 
 }
 
-function register(mod) {
+Instance.prototype.constants = Instance.prototype.k = constants;
+Instance.prototype.action = action;
 
-    modules.push(mod);
+Instance.prototype.appendCSS = function(css) {
 
-    if (initialized)
-        initializeModule(mod);
-
-}
-
-function defineConstant(key, value) {
-    
-    if (key in constants) {
-        throw new Error("duplicate constant: " + key);
-    }
-
-    Object.defineProperty(constants, key, {
-        value       : value,
-        writable    : false,
-        enumerable  : true
+    css = css.replace(/\$(\w+)/g, function(m) {
+        return theme[RegExp.$1];
     });
 
+    return styleTag(this.doc, css);
+
 }
 
-function defineConstants(cs) {
-    for (var k in cs) {
-        defineConstant(k, cs[k]);
-    }
-}
-
-hk.init             = init;
-hk.register         = register;
-hk.constants        = constants;
-hk.defineConstant   = defineConstant;
-hk.defineConstants  = defineConstants;
-hk.action           = require('hudkit-action');
-
-register(require('./lib/Widget'));
-register(require('./lib/RootPane'));
-
-module.exports = hk;
-},{"./lib/RootPane":3,"./lib/Widget":4,"hudkit-action":7,"stylekit":9}],3:[function(require,module,exports){
-var trbl = require('trbl');
+// when widget is registered make it available to all hudkit instances
+signals.widgetRegistered.connect(function(name, ctor) {
+	Instance.prototype[name] = ctor;
+});
+},{"./constants":7,"./registry":8,"./signals":9,"./theme":10,"fs":18,"hudkit-action":13,"style-tag":16}],5:[function(require,module,exports){
+var fs      = require('fs'),
+    trbl    = require('trbl');
 
 var DEFAULT_PADDING = 8;
 
-module.exports = function(hk, k, theme) {
+exports.initialize = function(ctx, k) {
 
-    //
-    // Styles
-
-    var sb = hk.styles.block();
-
-    sb.rule('.hk-root-pane', {
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        overflow: 'hidden',
-        backgroundColor: '$HK_ROOT_BG_COLOR'
-    });
-
-    sb.commit();
-
-    //
-    // Widget
-
-    hk.RootPane = hk.Widget.extend(function(_sc, _sm) {
+    var RootPane = ctx.Widget.extend(function(_sc, _sm) {
 
         return [
 
@@ -407,37 +291,22 @@ module.exports = function(hk, k, theme) {
 
     });
 
+    ctx.registerWidget('RootPane', RootPane);
+
 }
-},{"trbl":13}],4:[function(require,module,exports){
-var Class   = require('classkit').Class;
-var du      = require('domutil');
 
-module.exports = function(hk, k, theme) {
+exports.attach = function(instance) {
+    instance.appendCSS(".hk-root-pane {\n\ttop: 0;\n\tleft: 0;\n\tright: 0;\n\tbottom: 0;\n\toverflow: hidden;\n\tbackground-color: $HK_ROOT_BG_COLOR;\n}");
+}
 
-    //
-    // Styles
+},{"fs":18,"trbl":17}],6:[function(require,module,exports){
+var fs 		= require('fs'),
+	Class   = require('classkit').Class,
+	du 		= require('domutil');
 
-    var sb = hk.styles.block();
+exports.initialize = function(ctx, k) {
 
-    sb.rule('.hk-widget', {
-        overflow: 'hidden',
-        boxSizing: 'border-box'
-    });
-
-    sb.rule('.hk-position-manual', {
-        position: 'absolute'
-    });
-
-    sb.rule('.hk-position-auto', {
-        // placeholder only
-    });
-
-    sb.commit();
-
-    //
-    // Widget
-
-    hk.Widget = Class.extend(function(_sc, _sm) {
+    var Widget = Class.extend(function(_sc, _sm) {
 
         return [
 
@@ -616,8 +485,105 @@ module.exports = function(hk, k, theme) {
 
     });
 
+	ctx.registerWidget('Widget', Widget);
+
 }
-},{"classkit":5,"domutil":6}],5:[function(require,module,exports){
+
+exports.attach = function(instance) {
+	instance.appendCSS(".hk-widget {\n\toverflow: hidden;\n\tbox-sizing: border-box;\n\t-moz-box-sizing: border-box;\n}\n\n.hk-position-manual {\n\tposition: absolute;\n}\n\n.hk-position-auto {\n\t/* placeholder only */\n}\n");
+}
+
+},{"classkit":11,"domutil":12,"fs":18}],7:[function(require,module,exports){
+module.exports = {};
+},{}],8:[function(require,module,exports){
+var signals = require('./signals');
+
+module.exports = {
+	registerModule	: registerModule,
+	modules 		: modules,
+	registerWidget	: registerWidget,
+	widgets 		: widgets
+};
+
+var moduleList 			= [],
+	widgetMap 			= {},
+	moduleRegistered	= signals.moduleRegistered,
+	widgetRegistered	= signals.widgetRegistered;
+
+function registerModule(mod) {
+	moduleList.push(mod);
+	moduleRegistered.emit(mod);
+}
+
+function modules() {
+	return moduleList;
+}
+
+function registerWidget(name, ctor) {
+	if (name in widgetMap) {
+		throw new Error("duplicate widget type: " + name);
+	}
+	widgetMap[name] = ctor;
+	widgetRegistered.emit(name, ctor);
+}
+
+function widgets() {
+	return widgetMap;
+}
+
+},{"./signals":9}],9:[function(require,module,exports){
+var signal = require('signalkit');
+
+function s(signalName) {
+	exports[signalName] = signal(signalName);
+}
+
+s('moduleRegistered');
+s('widgetRegistered');
+},{"signalkit":15}],10:[function(require,module,exports){
+// TODO: this is eventually to be handled by Unwise,
+// with live updating when themes change.
+module.exports = {
+    'HK_MONOSPACE_FONT'             : 'Menlo, Monaco, "Liberation Mono", monospace',
+    'HK_TEXT_COLOR'                 : '#121729',
+
+    'HK_CONTROL_FONT'               : 'Helvetica, sans-serif',
+    'HK_CONTROL_FONT_SIZE'          : '10px',
+    'HK_CONTROL_BORDER_COLOR'       : '#455366',
+    'HK_CONTROL_ACTIVE_BG_COLOR'    : '#EAF20F',
+    
+    'HK_BUTTON_BG_COLOR'            : '#929DA8',
+
+    'HK_ROOT_BG_COLOR'              : '#181E23',
+
+    'HK_CONSOLE_FONT_SIZE'          : '13px',
+
+    'HK_SPLIT_PANE_DIVIDER_SIZE'    : '8px',
+    
+    'HK_TAB_SPACING'                : '7px',
+    'HK_TAB_PADDING'                : '7px',
+
+    // control font size + 2 * tab padding
+    'HK_TAB_HEIGHT'                 : '24px',
+    'HK_TAB_BORDER_RADIUS'          : '5px',
+    'HK_TAB_BACKGROUND_COLOR'       : '#67748C',
+
+    'HK_BLOCK_BORDER_RADIUS'        : '10px',
+
+    'HK_TOOLBAR_HEIGHT'             : '18px',
+    'HK_TOOLBAR_ITEM_BORDER_COLOR'  : '#A6B5BB',
+    'HK_TOOLBAR_MARGIN_TOP'         : '8px',
+    'HK_TOOLBAR_MARGIN_RIGHT'       : '8px',
+    'HK_TOOLBAR_MARGIN_BOTTOM'      : '8px',
+    'HK_TOOLBAR_MARGIN_LEFT'        : '8px',
+
+    // Unused currently...
+    'HK_DIALOG_PADDING'             : '6px',
+    'HK_DIALOG_BORDER_RADIUS'       : '6px',
+    'HK_DIALOG_HEADER_HEIGHT'       : '24px',
+    'HK_DIALOG_TRANSITION_DURATION' : '200'
+};
+},{}],11:[function(require,module,exports){
 function Class() {};
   
 Class.prototype.method = function(name) {
@@ -658,7 +624,7 @@ Class.Features = {
 
 exports.Class = Class;
 
-},{}],6:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 // Constants from jQuery
 var rclass = /[\t\r\n]/g;
 var core_rnotwhite = /\S+/g;
@@ -801,7 +767,7 @@ module.exports = {
     return el && el.nodeType === 1;
   }
 };
-},{}],7:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 var signal = require('signalkit');
 
 var ActionProto = Object.create(Function.prototype);
@@ -841,8 +807,8 @@ module.exports = function(fn, opts) {
 
 }
 
-},{"signalkit":8}],8:[function(require,module,exports){
-var process=require("__browserify_process");//
+},{"signalkit":14}],14:[function(require,module,exports){
+(function (process){//
 // Helpers
 
 if (typeof process !== 'undefined') {
@@ -911,273 +877,10 @@ Signal.prototype.clear = function() {
 // Exports
 
 module.exports = function(name) { return new Signal(name); }
-module.exports.Signal = Signal;
-},{"__browserify_process":14}],9:[function(require,module,exports){
-var global=typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {};var styleTag    = require('style-tag'),
-    builder     = require('css-builder'),
-    wmap        = require('wmap');
-
-var VAR_RE      = /\$[\w-]+/g;
-
-//
-//
-
-function StyleSet(doc) {
-    
-    this._document = doc || global.document || document;
-    this._blocks = [];
-
-    this.macros = {};
-    this.vars = wmap();
-    
-    this.vars.getInt = function(key) {
-        var val = this.get(key);
-        return (typeof val === 'undefined')
-                ? Number.NaN
-                : parseInt(val, 10);
-    }
-
-    this.vars.getFloat = function(key) {
-        var val = this.get(key);
-        return (typeof val === 'undefined')
-                ? Number.NaN
-                : parseFloat(val, 10);
-    }
-
-}
-
-StyleSet.prototype.block = function() {
-    var block = new StyleBlock(this);
-    this._blocks.push(block);
-    return block;
-}
-
-//
-//
-
-function StyleBlock(set) {
-    this._styleSet = set;
-    this._styleTag = null;
-    this._unwatch = null;
-    this._builder = null;
-
-    this._css = '';
-
-    this.macros = Object.create(set.macros);
-}
-
-StyleBlock.prototype.appendCSS = function(css) {
-    this._checkMutable();
-    this._css += css;
-    return this;
-}
-
-StyleBlock.prototype.commit = function() {
-
-    if (this._styleTag !== null)
-        return;
-
-    if (this._builder)
-        this._builder.commit();
-
-    this._watchReferencedVariables();
-
-    this._styleTag = styleTag(this._styleSet._document, this._cssWithVariableExpansion());
-
-}
-
-StyleBlock.prototype.destroy = function() {
-    if (this._styleTag) {
-        this._styleTag.destroy();
-        this._styleTag = false;
-        this._unwatch();
-        this._unwatch = null;
-    }
-}
-
-StyleBlock.prototype.rule = function(selector, rs) {
-    if (this._builder === null) {
-        this._builder = builder({
-            append      : this.appendCSS.bind(this),
-            builder     : this.macros
-        });
-    }
-    return this._builder.rule(selector, rs);
-}
-
-StyleBlock.prototype._watchReferencedVariables = function() {
-
-    var matches = this._css.match(VAR_RE) || [],
-        referencedVariables = matches.map(function(v) { return v.substr(1); });
-
-    this._unwatch = this._styleSet.vars.watch(referencedVariables, function() {
-        this._styleTag(this._cssWithVariableExpansion());
-    }.bind(this));
-
-}
-
-StyleBlock.prototype._cssWithVariableExpansion = function() {
-    var vars = this._styleSet.vars;
-
-    var css = this._css;
-    while (css.match(VAR_RE)) {
-        css = css.replace(VAR_RE, function(m) {
-            return vars.get(m.substr(1));
-        });
-    }
-
-    return css;
-}
-
-StyleBlock.prototype._checkMutable = function() {
-    if (this._styleTag !== null) {
-        throw new Error("style block is immutable - style tag already created");
-    }
-}
-
-//
-//
-
-module.exports = function(doc) {
-    return new StyleSet(doc);
-}
-},{"css-builder":10,"style-tag":11,"wmap":12}],10:[function(require,module,exports){
-// StyleBlock.prototype.macro = function(name, fn) {
-//     this._macros[name] = fn;
-// }
-
-// StyleBlock.prototype.expand = function(macro) {
-//     var m = this._lookupMacro(macro);
-//     var args = slice.call(arguments, 0);
-//     args[0] = this;
-//     m.apply(null, args);
-// }
-
-// StyleBlock.prototype._lookupMacro = function(macro) {
-//     var m = this._macros[macro];
-//     if (!m) throw new Error("unknown macro: " + macro);
-//     return m;
-// }
-
-module.exports = function(options) {
-
-    options = options || {};
-
-    var buffer          = '',
-        _append         = options.append || function(str) { buffer += str; },
-        path            = [],
-        currSelector    = null,
-        lastSelector    = null,
-        b               = options.builder || {},
-        frozen          = false;
-
-    function attrib(name, value) {
-        frozen && throwFrozen();
-        append(currSelector, translateKey(name) + ': ' + value);
-        return this;
-    }
-
-    function attribs(as) {
-        frozen && throwFrozen();
-        for (var k in as) {
-            b.attrib(k, as[k]);
-        }
-        return this;
-    }
-
-    function rule(selector, rs) {
-
-        frozen && throwFrozen();
-
-        if (Array.isArray(rs)) {
-            rs.forEach(function(r) { b.rule(selector, r); });
-            return;
-        }
-
-        var oldSelector = currSelector;
-        path.push(selector);
-        currSelector = path.join(' ').replace(/\s+\&/g, '');
-
-        if (typeof rs === 'string') {
-            append(currSelector, rs);
-        } else if (typeof rs === 'function') {
-            rs.call(b, b);
-        } else if (typeof rs === 'object') {
-            for (var cssKey in rs) {
-                var cssValue = rs[cssKey];
-                if (typeof cssValue === 'object') {
-                    b.rule(cssKey, cssValue);
-                } else {
-                    b.attrib(cssKey, cssValue);
-                }
-            }
-        } else {
-            throw new TypeError("rule must be string, function or object");
-        }
-
-        path.pop();
-        currSelector = oldSelector;
-
-        return this;
-
-    }
-
-    function rules(rs) {
-        for (var k in rs) {
-            b.rule(k, rs[k]);
-        }
-    }
-
-    function append(sel, css) {
-        if (lastSelector === sel) {
-            _append(' ' + css + ';');
-        } else {
-            if (lastSelector !== null) {
-                _append(" }\n");
-            }
-            _append(sel + ' { ' + css + ';');
-            lastSelector = sel;
-        }
-    }
-
-    function commit() {
-        if (!frozen) {
-            if (lastSelector) {
-                _append(" }\n");
-            }
-            frozen = true;
-        }
-    }
-
-    function translateKey(k) {
-        k = k.replace(/[A-Z]/g, function(m) {
-            return '-' + m[0].toLowerCase();
-        });
-
-        if (k.match(/^(webkit|moz|ms|o|khtml)-/)) {
-            k = '-' + k;
-        }
-
-        return k;
-    }
-
-    function throwFrozen() {
-        throw new Error("can't modify CSS builder - is frozen");
-    }
-
-    b.attrib        = attrib;
-    b.attribs       = attribs;
-    b.rule          = rule;
-    b.rules         = rules;
-    b.commit        = commit;
-    b.toString      = function() { commit(); return buffer; }
-
-    return b;
-
-}
-
-
-},{}],11:[function(require,module,exports){
+module.exports.Signal = Signal;}).call(this,require("/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js"))
+},{"/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":19}],15:[function(require,module,exports){
+module.exports=require(14)
+},{"/usr/local/lib/node_modules/watchify/node_modules/browserify/node_modules/insert-module-globals/node_modules/process/browser.js":19}],16:[function(require,module,exports){
 // adapted from
 // http://stackoverflow.com/questions/524696/how-to-create-a-style-tag-with-javascript
 module.exports = function(doc, initialCss) {
@@ -1217,72 +920,7 @@ module.exports = function(doc, initialCss) {
     return set;
 
 }
-},{}],12:[function(require,module,exports){
-function WMap(parent) {
-    this._entries = {};
-    this._watchers = {};
-}
-
-WMap.prototype.get = function(key) {
-    return this._entries[key];
-}
-
-WMap.prototype.set = function(key, value) {
-    var vb = this._entries[key];
-    this._entries[key] = value;
-    this._dispatch(key, vb, value);
-}
-
-WMap.prototype.remove = function(key) {
-    var vb = this._entries[key];
-    delete this._entries[key];
-    this._dispatch(key, vb, undefined);
-}
-
-WMap.prototype.watch = function(keys, cb) {
-
-    if (!Array.isArray(keys))
-        keys = [keys];
-
-    if (keys.length === 0)
-        return function() {};
-
-    var ws = this._watchers;
-
-    keys.forEach(function(k) {
-        (k in ws) ? ws[k].push(cb) : (ws[k] = [cb]);
-    }, this);
-
-    return function() {
-        keys.forEach(function(k) {
-            var kws = ws[k];
-            for (var i = 0; i < kws.length; ++i) {
-                if (kws[i] === cb) {
-                    kws.splice(i, 1);
-                    return;
-                }
-            }
-        });
-    };
-
-}
-
-WMap.prototype._dispatch = function(key, oldValue, newValue) {
-
-    var ws = this._watchers[key];
-
-    if (!ws)
-        return;
-
-    ws.forEach(function(c) { c(key, oldValue, newValue); });
-
-}
-
-module.exports = function() {
-    return new WMap();
-}
-
-},{}],13:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 // [a] => [a,a,a,a]
 // [a,b] => [a,b,a,b]
 // [a,b,c] => [a,b,c,b]
@@ -1327,7 +965,9 @@ module.exports = function(thing) {
         return [val, val, val, val];
     }
 }
-},{}],14:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
+
+},{}],19:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -1346,7 +986,8 @@ process.nextTick = (function () {
     if (canPost) {
         var queue = [];
         window.addEventListener('message', function (ev) {
-            if (ev.source === window && ev.data === 'process-tick') {
+            var source = ev.source;
+            if ((source === window || source === null) && ev.data === 'process-tick') {
                 ev.stopPropagation();
                 if (queue.length > 0) {
                     var fn = queue.shift();

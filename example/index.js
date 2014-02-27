@@ -1,5 +1,5 @@
 window.init = function() {
-    var hk = require('../');
-    hk.init(document);
-    window.hk = hk;
+    var hudkit = require('../');
+	hudkit.init();
+	window.hk = hudkit.instance(document);
 };

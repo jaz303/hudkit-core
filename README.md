@@ -4,38 +4,45 @@ Provides base functionality for `hudkit`. Includes actions, widgets, root pane, 
 
 ## API
 
-#### `hk.init([document])`
+### `hudkit` module
 
-Initialise hudkit with the given `document` (defaults to `global.document`).
+#### `hudkit.register(module)`
 
-#### `hk.register(fn)`
+Register a module with `hudkit` is initialised. Hudkit modules are objects with two functions:
 
-Register a function to be called when `hudkit` is initialised. This is normally used to register additional widgets using a pattern like this:
+  * `initialize(ctx)`: perform one-time module initialisation; this probably means registering a custom widget constructor by calling `ctx.registerWidget(name, ctor)`. Check out `lib/Widget/index.js` and `lib/RootPane/index.js` for reference.
 
-    hk.register(require('my-widget'));
+  * `attach(instance)`: attach
 
-Wherein module `my-widget` exports a single function receiving the parameters `hk, k, theme`.
+#### `hudkit.init()`
 
-#### `hk.constants`
+Initialise hudkit. Calls each registered module's `initialize()` function.
+
+#### `hudkit.instance(document)`
+
+Create an instance of hudkit rooted on the given `document`. Returns an `Instance` object granting access to widget constructors, constants etc.
+
+### `Instance`
+
+In addition to the following every `Instance` will contain a property for each registered widget constructor e.g. `instance.Widget`, `instance.RootPane`.
+
+#### `i.action(callback, [opts])`
+
+Create an action function for the given callback. See [hudkit-action](http://github.com/jaz303/hudkit-action) for documentation.
+
+#### `i.constants`, `i.k`
 
 Dictionary of defined constants.
 
-#### `hk.defineConstant(k, v)`
+#### `i.appendCSS(css)`
 
-A define constant `k` with value `v`.
+Append CSS to this instance's `document`.
 
-#### `hk.defineConstants(ks)`
+## Example
 
-Mass-define constants.
+    var hudkit = require('hudkit-core');
+    hudkit.register(require('my-widget-1'));
+    hudkit.register(require('my-widget-2'));
+    hudkit.init();
 
-#### `hk.styles`
-
-Hudkit's `stylekit` instance for dynamically adding widget styles to the document.
-
-#### `hk.theme`
-
-Shortcut for `hk.styles.vars`; a `wmap` instance used for updating the theme.
-
-#### `hk.action(callback, [opts])`
-
-Create an action function for the given callback. See [hudkit-action](http://github.com/jaz303/hudkit-action) for documentation.
+    var hk = hudkit.instance();
