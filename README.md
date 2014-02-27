@@ -30,9 +30,9 @@ In addition to the following every `Instance` will contain a property for each r
 
 Create an action function for the given callback. See [hudkit-action](http://github.com/jaz303/hudkit-action) for documentation.
 
-#### `i.constants`, `i.k`
+#### `i.constants`.
 
-Dictionary of defined constants.
+Dictionary of defined constants. Aliased to `i.k`.
 
 #### `i.appendCSS(css)`
 
