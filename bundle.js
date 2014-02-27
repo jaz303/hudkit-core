@@ -33,11 +33,6 @@ function init() {
     initialized = true;
 }
 
-Context.defineConstants({
-    POSITION_MODE_MANUAL        : 'manual',
-    POSITION_MODE_AUTO          : 'auto'
-});
-
 hk.register(require('./lib/Widget'));
 hk.register(require('./lib/RootPane'));
 
@@ -323,6 +318,11 @@ var fs 		= require('fs'),
 	du 		= require('domutil');
 
 exports.initialize = function(ctx, k, theme) {
+
+    ctx.defineConstants({
+        POSITION_MODE_MANUAL    : 'manual',
+        POSITION_MODE_AUTO      : 'auto'
+    });
 
     ctx.registerWidget('Widget', Class.extend(function(_sc, _sm) {
 

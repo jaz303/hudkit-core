@@ -32,10 +32,5 @@ function init() {
     initialized = true;
 }
 
-Context.defineConstants({
-    POSITION_MODE_MANUAL        : 'manual',
-    POSITION_MODE_AUTO          : 'auto'
-});
-
 hk.register(require('./lib/Widget'));
 hk.register(require('./lib/RootPane'));
