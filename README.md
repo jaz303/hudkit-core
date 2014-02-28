@@ -1,4 +1,4 @@
-# hudkit-core is deprecated! All functionality is now incorporated in the main 'hudkit' module!
+### hudkit-core is deprecated!<br>All functionality is now incorporated in the main 'hudkit' module!
 
 # hudkit-core
 
