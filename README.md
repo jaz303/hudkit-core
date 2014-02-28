@@ -1,3 +1,5 @@
+# hudkit-core is deprecated! All functionality is now incorporated in the main 'hudkit' module!
+
 # hudkit-core
 
 Provides base functionality for `hudkit`. Includes actions, widgets, root pane, styles, plus some housekeeping. You probably don't want to use this module directly - check out `hudkit` instead.
