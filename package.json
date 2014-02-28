@@ -1,6 +1,6 @@
 {
   "name": "hudkit-core",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Hudkit core library. You probably don't want to use this directly.",
   "main": "index.js",
   "scripts": {
